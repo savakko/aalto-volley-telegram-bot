@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace aalto_volley_bot
+namespace aalto_volley_bot.src
 {
     internal class UpdateHandler
     {
@@ -28,8 +28,8 @@ namespace aalto_volley_bot
             };
 
             botClient.StartReceiving(
-                updateHandler: this.HandleUpdateAsync,
-                pollingErrorHandler: this.HandlePollingErrorAsync,
+                updateHandler: HandleUpdateAsync,
+                pollingErrorHandler: HandlePollingErrorAsync,
                 receiverOptions: receiverOptions,
                 cancellationToken: cancellationToken
             );
@@ -50,7 +50,7 @@ namespace aalto_volley_bot
                     if (!messageText.StartsWith('/'))
                         return;
 
-                    await this.RouteCommandAsync(message, botClient, cancellationToken);
+                    await RouteCommandAsync(message, botClient, cancellationToken);
                     return;
 
                 case UpdateType.CallbackQuery:
@@ -59,7 +59,7 @@ namespace aalto_volley_bot
 
                     Console.WriteLine($"Received {update.Type} with data {query.Data} from {query.From}");
 
-                    await this.RouteCallBackQueryAsync(query, botClient, cancellationToken);
+                    await RouteCallBackQueryAsync(query, botClient, cancellationToken);
                     return;
 
                 default:
@@ -81,16 +81,17 @@ namespace aalto_volley_bot
             return Task.CompletedTask;
         }
 
-        private async Task<Message> RouteCommandAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
+        private async Task RouteCommandAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
             switch (message.Text?[1..].Trim())
             {
                 case "help":  // TODO
-                    return await botClient.SendTextMessageAsync(
+                    await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "_Help message here_",
                         parseMode: ParseMode.MarkdownV2,
                         cancellationToken: cancellationToken);
+                    return;
 
                 case "keskarit":
                     InlineKeyboardMarkup inlineKeyboard = new(new[]
@@ -109,14 +110,15 @@ namespace aalto_volley_bot
                         },
                     });
 
-                    return await botClient.SendTextMessageAsync(
+                    await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "A message with an inline keyboard markup",
                         replyMarkup: inlineKeyboard,
                         cancellationToken: cancellationToken);
+                    return;
 
                 case "song":  // TODO
-                    return await botClient.SendTextMessageAsync(
+                    await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "Sure thing!",
                         replyMarkup: new InlineKeyboardMarkup(
@@ -125,18 +127,20 @@ namespace aalto_volley_bot
                                 url: "https://open.spotify.com/track/0ngSk8aGEjWS6fsHIV9KKj?si=bd85cdc7d0f141b5")),
                         parseMode: ParseMode.Html,
                         cancellationToken: cancellationToken);
+                    return;
 
                 default:
-                    return await botClient.SendTextMessageAsync(
+                    await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "Sorry, don't know what you mean 😕\nTry typing /help",
                         disableNotification: true,
                         replyToMessageId: message.MessageId,
                         cancellationToken: cancellationToken);
+                    return;
             }
         }
 
-        private async Task<Message> RouteCallBackQueryAsync(CallbackQuery query, ITelegramBotClient botClient, CancellationToken cancellationToken)
+        private async Task RouteCallBackQueryAsync(CallbackQuery query, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
             switch (query.Data)
             {
@@ -146,41 +150,44 @@ namespace aalto_volley_bot
 
                     if (!match.Any())
                     {
-                        return await botClient.SendTextMessageAsync(
-                            chatId: query.From.Id,  // TODO: might change this!
+                        await botClient.AnswerCallbackQueryAsync(
+                            callbackQueryId: query.Id,
                             text: "No active men's weekly games were found",
+                            showAlert: true,
                             cancellationToken: cancellationToken);
+                        return;
                     }
+
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Posting the result in the chat...",
+                        cancellationToken: cancellationToken);
 
                     var eventDetails = match.First();
                     var id = eventDetails.Value<string>("id");
                     var date = eventDetails.Value<string>("date");
                     var name = eventDetails.Value<string>("name");
 
-                    return await botClient.SendTextMessageAsync(
-                        chatId: query.From.Id,  // TODO: might change this!
+                    await botClient.SendTextMessageAsync(
+                        chatId: query.From.Id,
                         text: $"*Next men's weekly games*\nEvent id: {id}\nDate: {date}\nName: {name}",
                         cancellationToken: cancellationToken);
+                    return;
 
                 case "testCallbackQuery":
                     await botClient.AnswerCallbackQueryAsync(
                         callbackQueryId: query.Id,
                         text: "testing...",
-                        //showAlert: true,
                         cancellationToken: cancellationToken);
-
-                    return await botClient.SendTextMessageAsync(
-                        chatId: query.From.Id,  // TODO: might change this!
-                        text: "Testing callbackquery answers...",
-                        disableNotification: true,
-                        cancellationToken: cancellationToken);
+                    return;
 
                 default:
-                    return await botClient.SendTextMessageAsync(
-                        chatId: query.From.Id,  // TODO: might change this!
-                        text: "Sorry, don't know what you mean 😕\nTry typing /help",
-                        disableNotification: true,
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: $"Response to query '{query.Data}' has not been implemented",
+                        showAlert: true,
                         cancellationToken: cancellationToken);
+                    return;
             }
         }
     }

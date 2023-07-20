@@ -1,5 +1,5 @@
 ﻿using Telegram.Bot;
-using aalto_volley_bot;
+using aalto_volley_bot.src;
 using Microsoft.Extensions.Configuration;
 
 Console.WriteLine("Initializing...");
