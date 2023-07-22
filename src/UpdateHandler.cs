@@ -7,6 +7,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using static System.Net.WebRequestMethods;
 
 namespace aalto_volley_bot.src
 {
@@ -91,7 +92,12 @@ namespace aalto_volley_bot.src
                 case var help when (new[] { "help", "start" }).Contains(help):
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
-                        text: "*Current commands:*\n/help | /start\n/hello | /hi\n/hbv\n/song",
+                        text: "*Current commands:*\n" +
+                            "/help | /start -- Help menu\n" +
+                            "/hello | /hi -- Greeting\n" +
+                            "/song -- Get a cool song _for testing_\n" +
+                            "/hbv -- Hietsu Beach Volley tools\n" +
+                            "/nimenhuuto -- Aalto-Volley Nimenhuuto tools",
                         parseMode: ParseMode.Markdown,
                         cancellationToken: cancellationToken);
                     return;
@@ -122,6 +128,26 @@ namespace aalto_volley_bot.src
                         text: "What would you like me to check",
                         replyMarkup: inlineKeyboard,
                         cancellationToken: cancellationToken);
+                    return;
+
+                case "nimenhuuto":
+                    WebAppInfo webAppInfo = new();
+                    webAppInfo.Url = "https://aalto-volley.nimenhuuto.com/events";
+
+                    InlineKeyboardMarkup webAppKeyboard = new(new[]
+                    {
+                        new []  // First row
+                        {
+                            InlineKeyboardButton.WithWebApp(text: "Upcoming events", webAppInfo: webAppInfo),
+                        }
+                    });
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: "Click below to display upcoming events",
+                        replyMarkup: webAppKeyboard,
+                        cancellationToken: cancellationToken);
+
                     return;
 
                 case "song":  // TODO
