@@ -1,4 +1,5 @@
 ﻿using aalto_volley_bot.Services;
+using aalto_volley_bot.src.Controllers;
 using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -11,11 +12,11 @@ namespace aalto_volley_bot.src
 {
     internal class UpdateHandler
     {
-        private readonly HbvService hbvService;
+        private readonly HbvController _hbvController;
 
         public UpdateHandler(TelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            hbvService = new HbvService();
+            _hbvController = new HbvController();
 
             // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
             ReceiverOptions receiverOptions = new()
@@ -85,34 +86,39 @@ namespace aalto_volley_bot.src
         {
             switch (message.Text?[1..].Trim())
             {
-                case "help":  // TODO
+                case var help when (new[] { "help", "start" }).Contains(help):
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
-                        text: "_Help message here_",
-                        parseMode: ParseMode.MarkdownV2,
+                        text: "*Current commands:*\n/help | /start\n/hello | /hi\n/hbv\n/song",
+                        parseMode: ParseMode.Markdown,
                         cancellationToken: cancellationToken);
                     return;
 
-                case "keskarit":
+                case var greeting when (new[] { "hello", "hi" }).Contains(greeting):
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: $"Hi {message.From?.FirstName} 🤗\nType /help to get started",
+                        cancellationToken: cancellationToken);
+                    return;
+
+                case "hbv":
                     InlineKeyboardMarkup inlineKeyboard = new(new[]
                     {
-                        // first row
-                        new []
+                        new []  // First row
                         {
-                            InlineKeyboardButton.WithCallbackData(text: "Next men's weekly games", callbackData: "nextMensWeekly"),
-                            InlineKeyboardButton.WithCallbackData(text: "Test CallbackQuery", callbackData: "testCallbackQuery"),
+                            InlineKeyboardButton.WithCallbackData(text: "All active events", callbackData: "Hbv:ActiveEvents"),
+                            //InlineKeyboardButton.WithCallbackData(text: "Test CallbackQuery", callbackData: "Test:CallbackQuery"),
                         },
-                        // second row
-                        new []
+                        new []  // Second row
                         {
-                            InlineKeyboardButton.WithCallbackData(text: "2.1", callbackData: "21"),
-                            InlineKeyboardButton.WithCallbackData(text: "2.2", callbackData: "22"),
+                            InlineKeyboardButton.WithCallbackData(text: "Latest men's weekly games", callbackData: "Hbv:LatestMensWeekly"),
+                            InlineKeyboardButton.WithCallbackData(text: "Latest women's weekly games", callbackData: "Hbv:LatestWomensWeekly"),
                         },
                     });
 
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
-                        text: "A message with an inline keyboard markup",
+                        text: "What would you like me to check",
                         replyMarkup: inlineKeyboard,
                         cancellationToken: cancellationToken);
                     return;
@@ -142,17 +148,39 @@ namespace aalto_volley_bot.src
 
         private async Task RouteCallBackQueryAsync(CallbackQuery query, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
+            JArray events;
+            JObject singleEvent;
+            string mapping;
+
             switch (query.Data)
             {
-                case "nextMensWeekly":
-                    var events = await hbvService.GetActiveEventsAsync();
-                    var match = events.Where(ob => ob.Value<string>("name").ToLower().Contains("keskarit"));
+                case "Hbv:ActiveEvents":
+                    events = await _hbvController.GetActiveEventsAsync();
+                    var temp = events.GroupBy(ev => ev.Value<string>("date"))
+                        .Select(group => $"*{group.Key}:*\n" +
+                            string.Join("\n", group.Select(ev => $"-{ev["name"]}, (id: {ev["id"]})")));
+                    mapping = string.Join("\n\n", temp);
 
-                    if (!match.Any())
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Posting the result in chat...",
+                        cancellationToken: cancellationToken);
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: query.From.Id,
+                        text: mapping,
+                        parseMode: ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+                    return;
+
+                case "Hbv:LatestMensWeekly":
+                    singleEvent = await _hbvController.GetLatestEventParticipantsByKeywordAsync("keskarit");
+
+                    if (!singleEvent.HasValues)
                     {
                         await botClient.AnswerCallbackQueryAsync(
                             callbackQueryId: query.Id,
-                            text: "No active men's weekly games were found",
+                            text: "No men's weekly games were found",
                             showAlert: true,
                             cancellationToken: cancellationToken);
                         return;
@@ -160,24 +188,63 @@ namespace aalto_volley_bot.src
 
                     await botClient.AnswerCallbackQueryAsync(
                         callbackQueryId: query.Id,
-                        text: "Posting the result in the chat...",
+                        text: "Posting the result in chat...",
                         cancellationToken: cancellationToken);
 
-                    var eventDetails = match.First();
-                    var id = eventDetails.Value<string>("id");
-                    var date = eventDetails.Value<string>("date");
-                    var name = eventDetails.Value<string>("name");
+                    mapping =
+                        "*" + singleEvent.Value<string>("name") + "*" +
+                        "\nId: " + singleEvent.Value<string>("id") +
+                        "\nDate: " + singleEvent.Value<string>("date") +
+                        "\nParticipants: " + string.Join(
+                            ", ",
+                            singleEvent.Value<JArray>("participants")
+                                .Select(participant => participant.Value<string>("name1")));
 
                     await botClient.SendTextMessageAsync(
                         chatId: query.From.Id,
-                        text: $"*Next men's weekly games*\nEvent id: {id}\nDate: {date}\nName: {name}",
+                        text: mapping,
+                        parseMode: ParseMode.Markdown,
                         cancellationToken: cancellationToken);
                     return;
 
-                case "testCallbackQuery":
+                case "Hbv:LatestWomensWeekly":
+                    singleEvent = await _hbvController.GetLatestEventParticipantsByKeywordAsync("tirsat");
+
+                    if (!singleEvent.HasValues)
+                    {
+                        await botClient.AnswerCallbackQueryAsync(
+                            callbackQueryId: query.Id,
+                            text: "No women's weekly games were found",
+                            showAlert: true,
+                            cancellationToken: cancellationToken);
+                        return;
+                    }
+
                     await botClient.AnswerCallbackQueryAsync(
                         callbackQueryId: query.Id,
-                        text: "testing...",
+                        text: "Posting the result in chat...",
+                        cancellationToken: cancellationToken);
+
+                    mapping =
+                        "*" + singleEvent.Value<string>("name") + "*" +
+                        "\nId: " + singleEvent.Value<string>("id") +
+                        "\nDate: " + singleEvent.Value<string>("date") +
+                        "\nParticipants: " + string.Join(
+                            ", ",
+                            singleEvent.Value<JArray>("participants")
+                                .Select(participant => participant.Value<string>("name1")));
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: query.From.Id,
+                        text: mapping,
+                        parseMode: ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+                    return;
+
+                case "Test:CallbackQuery":
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Testing...",
                         cancellationToken: cancellationToken);
                     return;
 

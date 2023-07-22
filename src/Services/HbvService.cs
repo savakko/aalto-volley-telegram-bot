@@ -11,34 +11,34 @@ namespace aalto_volley_bot.Services
 {
     internal class HbvService
     {
-        public Uri apiBasePath = new("https://prod.hbv.fi/hbv-api/");
+        public readonly Uri ApiBasePath = new("https://prod.hbv.fi/hbv-api/");
 
-        public async Task<JToken> GetActiveEventsAsync()
+        public async Task<JArray> GetActiveEventsAsync()
         {
             var client = new HttpClient();
-            var uri = new Uri(this.apiBasePath, "events");
+            var uri = new Uri(this.ApiBasePath, "events");
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            return JToken.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(await response.Content.ReadAsStringAsync());
         }
 
-        public async Task<JToken> GetAllEventsAsync()
+        public async Task<JArray> GetAllEventsAsync()
         {
             var client = new HttpClient();
-            var uri = new Uri(this.apiBasePath, "allevents");
+            var uri = new Uri(this.ApiBasePath, "allevents");
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            return JToken.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(await response.Content.ReadAsStringAsync());
         }
 
         public async Task<JToken> GetEventByIdAsync(string eventId)
         {
             var client = new HttpClient();
-            var uri = new Uri(this.apiBasePath, $"events/{eventId}");
+            var uri = new Uri(this.ApiBasePath, $"events/{eventId}");
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
@@ -49,7 +49,7 @@ namespace aalto_volley_bot.Services
         public async Task<JToken> GetGroupByEventIdAsync(string eventId)
         {
             var client = new HttpClient();
-            var uri = new Uri(this.apiBasePath, $"events/groups/{eventId}");
+            var uri = new Uri(this.ApiBasePath, $"events/groups/{eventId}");
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
@@ -57,21 +57,21 @@ namespace aalto_volley_bot.Services
             return JToken.Parse(await response.Content.ReadAsStringAsync());
         }
 
-        public async Task<JToken> GetParticipantsByGroupIdAsync(string groupId)
+        public async Task<JArray> GetParticipantsByGroupIdAsync(string groupId)
         {
             var client = new HttpClient();
-            var uri = new Uri(this.apiBasePath, $"events/participants/{groupId}");
+            var uri = new Uri(this.ApiBasePath, $"events/participants/{groupId}");
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            return JToken.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(await response.Content.ReadAsStringAsync());
         }
 
         public async Task<JToken> GetMemberByIdAsync(string memberId)
         {
             var client = new HttpClient();
-            var uri = new Uri(this.apiBasePath, $"membersearch?query=/{memberId}");
+            var uri = new Uri(this.ApiBasePath, $"membersearch?query=/{memberId}");
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
