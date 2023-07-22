@@ -38,6 +38,8 @@ namespace aalto_volley_bot.src
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
+            Console.Write(DateTime.Now.ToString() + ": ");  // Timestamp for received update
+
             switch (update.Type)
             {
                 case UpdateType.Message:
@@ -107,7 +109,6 @@ namespace aalto_volley_bot.src
                         new []  // First row
                         {
                             InlineKeyboardButton.WithCallbackData(text: "All active events", callbackData: "Hbv:ActiveEvents"),
-                            //InlineKeyboardButton.WithCallbackData(text: "Test CallbackQuery", callbackData: "Test:CallbackQuery"),
                         },
                         new []  // Second row
                         {
@@ -238,13 +239,6 @@ namespace aalto_volley_bot.src
                         chatId: query.From.Id,
                         text: mapping,
                         parseMode: ParseMode.Markdown,
-                        cancellationToken: cancellationToken);
-                    return;
-
-                case "Test:CallbackQuery":
-                    await botClient.AnswerCallbackQueryAsync(
-                        callbackQueryId: query.Id,
-                        text: "Testing...",
                         cancellationToken: cancellationToken);
                     return;
 
