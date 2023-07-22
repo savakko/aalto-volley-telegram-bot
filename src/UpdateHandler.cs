@@ -156,16 +156,17 @@ namespace aalto_volley_bot.src
             switch (query.Data)
             {
                 case "Hbv:ActiveEvents":
-                    events = await _hbvController.GetActiveEventsAsync();
-                    var temp = events.GroupBy(ev => ev.Value<string>("date"))
-                        .Select(group => $"*{group.Key}:*\n" +
-                            string.Join("\n", group.Select(ev => $"-{ev["name"]}, (id: {ev["id"]})")));
-                    mapping = string.Join("\n\n", temp);
-
                     await botClient.AnswerCallbackQueryAsync(
                         callbackQueryId: query.Id,
-                        text: "Posting the result in chat...",
+                        text: "Fetching active events...",
                         cancellationToken: cancellationToken);
+
+                    events = await _hbvController.GetActiveEventsAsync();
+                    mapping = string.Join("\n\n", events.GroupBy(ev => ev.Value<string>("date"))
+                        .Select(group =>
+                            "*" + group.Key + ":*\n" +
+                            string.Join("\n", group.Select(ev =>
+                                $"-{ev.Value<string>("name")}, (id: {ev.Value<string>("id")})"))));
 
                     await botClient.SendTextMessageAsync(
                         chatId: query.From.Id,
@@ -175,6 +176,11 @@ namespace aalto_volley_bot.src
                     return;
 
                 case "Hbv:LatestMensWeekly":
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Fetching the latest men's weekly games...",
+                        cancellationToken: cancellationToken);
+
                     singleEvent = await _hbvController.GetLatestEventParticipantsByKeywordAsync("keskarit");
 
                     if (!singleEvent.HasValues)
@@ -186,11 +192,6 @@ namespace aalto_volley_bot.src
                             cancellationToken: cancellationToken);
                         return;
                     }
-
-                    await botClient.AnswerCallbackQueryAsync(
-                        callbackQueryId: query.Id,
-                        text: "Posting the result in chat...",
-                        cancellationToken: cancellationToken);
 
                     mapping =
                         "*" + singleEvent.Value<string>("name") + "*" +
@@ -209,6 +210,11 @@ namespace aalto_volley_bot.src
                     return;
 
                 case "Hbv:LatestWomensWeekly":
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Fetching the latest women's weekly games...",
+                        cancellationToken: cancellationToken);
+
                     singleEvent = await _hbvController.GetLatestEventParticipantsByKeywordAsync("tirsat");
 
                     if (!singleEvent.HasValues)
@@ -220,11 +226,6 @@ namespace aalto_volley_bot.src
                             cancellationToken: cancellationToken);
                         return;
                     }
-
-                    await botClient.AnswerCallbackQueryAsync(
-                        callbackQueryId: query.Id,
-                        text: "Posting the result in chat...",
-                        cancellationToken: cancellationToken);
 
                     mapping =
                         "*" + singleEvent.Value<string>("name") + "*" +
