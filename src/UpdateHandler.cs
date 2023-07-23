@@ -1,5 +1,4 @@
-﻿using aalto_volley_bot.Services;
-using aalto_volley_bot.src.Controllers;
+﻿using aalto_volley_bot.src.Controllers;
 using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -7,7 +6,6 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using static System.Net.WebRequestMethods;
 
 namespace aalto_volley_bot.src
 {
