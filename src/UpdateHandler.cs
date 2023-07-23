@@ -14,10 +14,12 @@ namespace aalto_volley_bot.src
     internal class UpdateHandler
     {
         private readonly HbvController _hbvController;
+        private readonly NimenhuutoController _nimenhuutoController;
 
         public UpdateHandler(TelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            _hbvController = new HbvController();
+            _hbvController = new();
+            _nimenhuutoController = new();
 
             // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
             ReceiverOptions receiverOptions = new()
@@ -87,6 +89,8 @@ namespace aalto_volley_bot.src
 
         private async Task RouteCommandAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
+            IReplyMarkup replyMarkup;
+
             switch (message.Text?[1..].Trim())
             {
                 case var help when (new[] { "help", "start" }).Contains(help):
@@ -110,7 +114,7 @@ namespace aalto_volley_bot.src
                     return;
 
                 case "hbv":
-                    InlineKeyboardMarkup inlineKeyboard = new(new[]
+                    replyMarkup = new InlineKeyboardMarkup(new[]
                     {
                         new []  // First row
                         {
@@ -126,28 +130,19 @@ namespace aalto_volley_bot.src
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "What would you like me to check",
-                        replyMarkup: inlineKeyboard,
+                        replyMarkup: replyMarkup,
                         cancellationToken: cancellationToken);
                     return;
 
                 case "nimenhuuto":
-                    WebAppInfo webAppInfo = new();
-                    webAppInfo.Url = "https://aalto-volley.nimenhuuto.com/events";
-
-                    InlineKeyboardMarkup webAppKeyboard = new(new[]
-                    {
-                        new []  // First row
-                        {
-                            InlineKeyboardButton.WithWebApp(text: "Upcoming events", webAppInfo: webAppInfo),
-                        }
-                    });
+                    replyMarkup = new InlineKeyboardMarkup(_nimenhuutoController.GetAllWebApps()
+                        .Select(pair => new[] { InlineKeyboardButton.WithWebApp(text: pair.Key, webAppInfo: pair.Value) }));
 
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "Click below to display upcoming events",
-                        replyMarkup: webAppKeyboard,
+                        replyMarkup: replyMarkup,
                         cancellationToken: cancellationToken);
-
                     return;
 
                 case "song":  // TODO
