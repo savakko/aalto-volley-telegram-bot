@@ -1,5 +1,4 @@
-﻿using aalto_volley_bot.Services;
-using aalto_volley_bot.src.Controllers;
+﻿using aalto_volley_bot.src.Controllers;
 using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -13,10 +12,12 @@ namespace aalto_volley_bot.src
     internal class UpdateHandler
     {
         private readonly HbvController _hbvController;
+        private readonly NimenhuutoController _nimenhuutoController;
 
         public UpdateHandler(TelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            _hbvController = new HbvController();
+            _hbvController = new();
+            _nimenhuutoController = new();
 
             // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
             ReceiverOptions receiverOptions = new()
@@ -86,12 +87,19 @@ namespace aalto_volley_bot.src
 
         private async Task RouteCommandAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
+            IReplyMarkup replyMarkup;
+
             switch (message.Text?[1..].Trim())
             {
                 case var help when (new[] { "help", "start" }).Contains(help):
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
-                        text: "*Current commands:*\n/help | /start\n/hello | /hi\n/hbv\n/song",
+                        text: "*Current commands:*\n" +
+                            "/help | /start -- Help menu\n" +
+                            "/hello | /hi -- Greeting\n" +
+                            "/song -- Get a cool song _for testing_\n" +
+                            "/hbv -- Hietsu Beach Volley tools\n" +
+                            "/nimenhuuto -- Aalto-Volley Nimenhuuto tools",
                         parseMode: ParseMode.Markdown,
                         cancellationToken: cancellationToken);
                     return;
@@ -104,7 +112,7 @@ namespace aalto_volley_bot.src
                     return;
 
                 case "hbv":
-                    InlineKeyboardMarkup inlineKeyboard = new(new[]
+                    replyMarkup = new InlineKeyboardMarkup(new[]
                     {
                         new []  // First row
                         {
@@ -120,7 +128,25 @@ namespace aalto_volley_bot.src
                     await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: "What would you like me to check",
-                        replyMarkup: inlineKeyboard,
+                        replyMarkup: replyMarkup,
+                        cancellationToken: cancellationToken);
+                    return;
+
+                case "nimenhuuto":
+                    // WebAppButtons cannot be sent to groups -> try to respond to the sender
+                    if (message.From == null)
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId: message.Chat.Id,
+                            text: "Message sender was not found, try sending me a direct message",
+                            cancellationToken: cancellationToken);
+                        return;
+                    }
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.From.Id,
+                        text: "Access Nimenhuuto directly in Telegram",
+                        replyMarkup: _nimenhuutoController.GetNimenhuutoMainMenu(),
                         cancellationToken: cancellationToken);
                     return;
 
@@ -153,6 +179,7 @@ namespace aalto_volley_bot.src
             JObject singleEvent;
             string mapping;
 
+            // By default, deliver the answer to the User who called the query
             switch (query.Data)
             {
                 case "Hbv:ActiveEvents":
@@ -240,6 +267,28 @@ namespace aalto_volley_bot.src
                         chatId: query.From.Id,
                         text: mapping,
                         parseMode: ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+                    return;
+
+                case "Nimenhuuto:Manager":
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Getting manager data...",
+                        cancellationToken: cancellationToken);
+
+                    // Edit the queried message
+                    //await botClient.EditMessageReplyMarkupAsync(
+                    //    chatId: query.Message.Chat.Id,
+                    //    messageId: query.Message.MessageId,
+                    //    replyMarkup: (InlineKeyboardMarkup)_nimenhuutoController.GetNimenhuutoManagerMenu(),
+                    //    cancellationToken: cancellationToken);
+
+                    // Send a new message below the queried one
+                    await botClient.SendTextMessageAsync(
+                        chatId: query.Message != null ? query.Message.Chat.Id : query.From.Id,
+                        text: "Access the manager pages (requires manager privileges)",
+                        parseMode: ParseMode.Markdown,
+                        replyMarkup: _nimenhuutoController.GetNimenhuutoManagerMenu(),
                         cancellationToken: cancellationToken);
                     return;
 
