@@ -136,8 +136,18 @@ namespace aalto_volley_bot.src
                     replyMarkup = new InlineKeyboardMarkup(_nimenhuutoController.GetAllWebApps()
                         .Select(pair => new[] { InlineKeyboardButton.WithWebApp(text: pair.Key, webAppInfo: pair.Value) }));
 
+                    // WebAppButtons cannot be sent to groups -> try to respond to the sender
+                    if (message.From == null)
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId: message.Chat.Id,
+                            text: "Message sender was not found, try sending me a direct message",
+                            cancellationToken: cancellationToken);
+                        return;
+                    }
+
                     await botClient.SendTextMessageAsync(
-                        chatId: message.Chat.Id,
+                        chatId: message.From.Id,
                         text: "Click below to display upcoming events",
                         replyMarkup: replyMarkup,
                         cancellationToken: cancellationToken);
@@ -172,6 +182,7 @@ namespace aalto_volley_bot.src
             JObject singleEvent;
             string mapping;
 
+            // By default, deliver the answer to the User who called the query
             switch (query.Data)
             {
                 case "Hbv:ActiveEvents":
