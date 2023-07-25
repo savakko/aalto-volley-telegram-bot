@@ -133,9 +133,6 @@ namespace aalto_volley_bot.src
                     return;
 
                 case "nimenhuuto":
-                    replyMarkup = new InlineKeyboardMarkup(_nimenhuutoController.GetAllWebApps()
-                        .Select(pair => new[] { InlineKeyboardButton.WithWebApp(text: pair.Key, webAppInfo: pair.Value) }));
-
                     // WebAppButtons cannot be sent to groups -> try to respond to the sender
                     if (message.From == null)
                     {
@@ -148,8 +145,8 @@ namespace aalto_volley_bot.src
 
                     await botClient.SendTextMessageAsync(
                         chatId: message.From.Id,
-                        text: "Click below to display upcoming events",
-                        replyMarkup: replyMarkup,
+                        text: "Access Nimenhuuto directly in Telegram",
+                        replyMarkup: _nimenhuutoController.GetNimenhuutoMainMenu(),
                         cancellationToken: cancellationToken);
                     return;
 
@@ -270,6 +267,28 @@ namespace aalto_volley_bot.src
                         chatId: query.From.Id,
                         text: mapping,
                         parseMode: ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+                    return;
+
+                case "Nimenhuuto:Manager":
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: query.Id,
+                        text: "Getting manager data...",
+                        cancellationToken: cancellationToken);
+
+                    // Edit the queried message
+                    //await botClient.EditMessageReplyMarkupAsync(
+                    //    chatId: query.Message.Chat.Id,
+                    //    messageId: query.Message.MessageId,
+                    //    replyMarkup: (InlineKeyboardMarkup)_nimenhuutoController.GetNimenhuutoManagerMenu(),
+                    //    cancellationToken: cancellationToken);
+
+                    // Send a new message below the queried one
+                    await botClient.SendTextMessageAsync(
+                        chatId: query.Message != null ? query.Message.Chat.Id : query.From.Id,
+                        text: "Access the manager pages (requires manager privileges)",
+                        parseMode: ParseMode.Markdown,
+                        replyMarkup: _nimenhuutoController.GetNimenhuutoManagerMenu(),
                         cancellationToken: cancellationToken);
                     return;
 
