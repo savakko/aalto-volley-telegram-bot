@@ -21,7 +21,7 @@ Console.WriteLine("Configuration successful");
 
 var botClient = new TelegramBotClient(token);
 using CancellationTokenSource cts = new();
-var updateHandler = new UpdateHandler(botClient, cts.Token);
+var updateHandler = new UpdateRouter(botClient, cts.Token);
 
 Console.WriteLine($"Start listening for @{(await botClient.GetMeAsync()).Username}");
 Console.ReadLine();

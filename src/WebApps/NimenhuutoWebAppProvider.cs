@@ -1,5 +1,4 @@
 ﻿using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace aalto_volley_bot.src.WebApps
@@ -54,7 +53,7 @@ namespace aalto_volley_bot.src.WebApps
             return;
         }
 
-        public IReplyMarkup BuildMainMenu()
+        public IReplyMarkup GetMainMenu()
         {
             return new InlineKeyboardMarkup(new[]
             {
@@ -84,7 +83,7 @@ namespace aalto_volley_bot.src.WebApps
             });
         }
 
-        public IReplyMarkup BuildManagerMenu()
+        public IReplyMarkup GetManagerMenu()
         {
             return new InlineKeyboardMarkup(new[]
             {
