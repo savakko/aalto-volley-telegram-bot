@@ -1,0 +1,10 @@
+Hello! 👋
+I'm Aalto-Volley-Bot, and I aim to provide you with helpful info and tools about all things Aalto-Volley. Write '/' in the chat to get a list of my commands. Below are brief explanations of some services I provide.
+
+<b>Nimenhuuto tools</b>
+<i>Description TBD...</i>
+
+<b>Hietsu Beach Volley tools</b>
+<i>Description TBD...</i>
+
+<i>Currently in group chats, you have to add '@aaltovolley_bot' at the end of your command, e.g. '/help@aaltovolley_bot'. Looking to automate this in the future.</i>
