@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using aalto_volley_bot.src.Services;
+using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace aalto_volley_bot.Services
 {
@@ -8,68 +10,90 @@ namespace aalto_volley_bot.Services
 
         public async Task<JArray> GetActiveEventsAsync()
         {
-            var client = new HttpClient();
-            var uri = new Uri(this.ApiBasePath, "events");
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var uri = new Uri(ApiBasePath, "events");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
 
-            return JArray.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(content);
         }
 
         public async Task<JArray> GetAllEventsAsync()
         {
-            var client = new HttpClient();
-            var uri = new Uri(this.ApiBasePath, "allevents");
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var uri = new Uri(ApiBasePath, "allevents");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
 
-            return JArray.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(content);
         }
 
-        public async Task<JToken> GetEventByIdAsync(string eventId)
+        public async Task<JObject> GetEventByIdAsync(string eventId)
         {
-            var client = new HttpClient();
-            var uri = new Uri(this.ApiBasePath, $"events/{eventId}");
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var uri = new Uri(ApiBasePath, $"events/{eventId}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
 
-            return JToken.Parse(await response.Content.ReadAsStringAsync());
+            return JObject.Parse(content);
         }
         
-        public async Task<JToken> GetGroupByEventIdAsync(string eventId)
+        public async Task<JArray> GetGroupsByEventIdAsync(string eventId)
         {
-            var client = new HttpClient();
-            var uri = new Uri(this.ApiBasePath, $"events/groups/{eventId}");
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var uri = new Uri(ApiBasePath, $"events/groups/{eventId}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
 
-            return JToken.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(content);
         }
 
         public async Task<JArray> GetParticipantsByGroupIdAsync(string groupId)
         {
-            var client = new HttpClient();
-            var uri = new Uri(this.ApiBasePath, $"events/participants/{groupId}");
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var uri = new Uri(ApiBasePath, $"events/participants/{groupId}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
 
-            return JArray.Parse(await response.Content.ReadAsStringAsync());
+            return JArray.Parse(content);
         }
 
-        public async Task<JToken> GetMemberByIdAsync(string memberId)
+        public async Task<JObject> GetWeeklyGameByIdAsync(string weeklyGameId)
         {
-            var client = new HttpClient();
-            var uri = new Uri(this.ApiBasePath, $"membersearch?query=/{memberId}");
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var uri = new Uri(ApiBasePath, $"weekgames/{weeklyGameId}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
 
-            return JToken.Parse(await response.Content.ReadAsStringAsync());
+            return JObject.Parse(content);
+        }
+
+        public async Task<JArray> GetWeeklyGamesBySerieAndYearAsync(string serie, string year)
+        {
+            var uri = new Uri(ApiBasePath, $"weekgames?serie={serie}&year={year}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
+
+            return JArray.Parse(content);
+        }
+
+        public async Task<JArray> GetWeeklyGameResultsByIdAsync(string weeklyGameId)
+        {
+            var uri = new Uri(ApiBasePath, $"weekgames/{weeklyGameId}/results");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
+
+            return JArray.Parse(content);
+        }
+
+        public async Task<JArray> GetWeeklyGameRankingsBySerieAndYearAsync(string serie, string year)
+        {
+            var uri = new Uri(ApiBasePath, $"weekgameranking/points?serie={serie}&year={year}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
+
+            return JArray.Parse(content);
+        }
+
+        public async Task<JArray> GetMembersByIdAsync(string memberIds)
+        {
+            var uri = new Uri(ApiBasePath, $"membersearch?query=/{memberIds}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
+
+            return JArray.Parse(content);
+        }
+
+        public async Task<JArray> GetResultsByMemberIdAsync(string memberId)
+        {
+            var uri = new Uri(ApiBasePath, $"players/{memberId}");
+            var content = await ServiceUtils.GetContentAsStringAsync(uri);
+
+            return JArray.Parse(content);
         }
     }
 }

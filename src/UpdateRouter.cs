@@ -128,8 +128,8 @@ namespace aalto_volley_bot.src
             return query switch
             {
                 "Hbv:ActiveEvents" => _hbvController.SendActiveEventsAsync,
-                "Hbv:LatestMensWeekly" => _hbvController.SendLatestMensWeeklyAsync,
-                "Hbv:LatestWomensWeekly" => _hbvController.SendLatestWomensWeeklyAsync,
+                "Hbv:Keskarit" => _hbvController.SendWeeklyGamesAsync,
+                "Hbv:Tirsat" => _hbvController.SendWeeklyGamesAsync,
                 "Nimenhuuto:Manager" => _nimenhuutoController.SendManagerMenuAsync,
                 _ => Utils.SendDefaultCallBackQueryAsync,
             };
