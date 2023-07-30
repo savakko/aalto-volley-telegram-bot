@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace aalto_volley_bot.src.Services
+﻿namespace aalto_volley_bot.src.Services
 {
     static class ServiceUtils
     {
