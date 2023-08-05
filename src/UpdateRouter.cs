@@ -131,6 +131,7 @@ namespace aalto_volley_bot.src
                 "Hbv:Keskarit" => _hbvController.SendWeeklyGamesAsync,
                 "Hbv:Tirsat" => _hbvController.SendWeeklyGamesAsync,
                 "Nimenhuuto:Manager" => _nimenhuutoController.SendManagerMenuAsync,
+                "Nimenhuuto:List specific events" => _nimenhuutoController.SendUpcomingEventsMenuAsync,
                 _ => Utils.SendDefaultCallBackQueryAsync,
             };
         }

@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.Types;
+﻿using Newtonsoft.Json.Linq;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace aalto_volley_bot.src.WebApps
@@ -78,6 +79,10 @@ namespace aalto_volley_bot.src.WebApps
                 },
                 new[]
                 {
+                    BuildMenuButton("List specific events"),
+                },
+                new[]
+                {
                     BuildMenuButton("Manager"),
                 },
             });
@@ -103,6 +108,16 @@ namespace aalto_volley_bot.src.WebApps
         {
             return new InlineKeyboardMarkup(WebApps.Select(pair =>
                 new[] { InlineKeyboardButton.WithWebApp(text: pair.Key, webAppInfo: pair.Value) }));
+        }
+
+        public IReplyMarkup BuildEventsColumnMenu(JArray events)
+        {
+            return new InlineKeyboardMarkup(events.Select(ev =>new[]
+            {
+                InlineKeyboardButton.WithWebApp(
+                    text: ev.Value<string>("Type") + ": " + ev.Value<string>("Time"),
+                    webAppInfo: new WebAppInfo { Url = ev.Value<string>("Link")})
+            }));
         }
 
         private InlineKeyboardButton BuildWebAppButton(string key)
