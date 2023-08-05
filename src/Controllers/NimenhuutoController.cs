@@ -13,7 +13,7 @@ namespace aalto_volley_bot.src.Controllers
 
         public async Task SendMainMenuAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            await Utils.RespondToPrivateChatAsync(message, botClient, cancellationToken,
+            await ControllerUtils.RespondToPrivateChatAsync(message, botClient, cancellationToken,
                 respondToChat: (chatId) => botClient.SendTextMessageAsync(
                     chatId: chatId,
                     text: "Access Nimenhuuto directly in Telegram",

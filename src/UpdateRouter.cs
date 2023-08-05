@@ -114,12 +114,12 @@ namespace aalto_volley_bot.src
             {
                 "/hbv" => _hbvController.SendMainMenuAsync,
                 "/nimenhuuto" => _nimenhuutoController.SendMainMenuAsync,
-                "/start" => Utils.SendHelpTextAsync,
-                "/help" => Utils.SendHelpTextAsync,
-                "/menu" => Utils.SendHelpTextAsync,
-                "/hello" => Utils.SendHelpTextAsync,
-                "/hi" => Utils.SendHelpTextAsync,
-                _ => Utils.SendDefaultMessageAsync,
+                "/start" => ControllerUtils.SendHelpTextAsync,
+                "/help" => ControllerUtils.SendHelpTextAsync,
+                "/menu" => ControllerUtils.SendHelpTextAsync,
+                "/hello" => ControllerUtils.SendHelpTextAsync,
+                "/hi" => ControllerUtils.SendHelpTextAsync,
+                _ => ControllerUtils.SendDefaultMessageAsync,
             };
         }
 
@@ -132,7 +132,7 @@ namespace aalto_volley_bot.src
                 "Hbv:Tirsat" => _hbvController.SendWeeklyGamesAsync,
                 "Nimenhuuto:Manager" => _nimenhuutoController.SendManagerMenuAsync,
                 "Nimenhuuto:List specific events" => _nimenhuutoController.SendUpcomingEventsMenuAsync,
-                _ => Utils.SendDefaultCallBackQueryAsync,
+                _ => ControllerUtils.SendDefaultCallBackQueryAsync,
             };
         }
     }

@@ -3,9 +3,9 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace aalto_volley_bot.src
+namespace aalto_volley_bot.src.Controllers
 {
-    static class Utils
+    static class ControllerUtils
     {
         public static async Task SendDefaultMessageAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
