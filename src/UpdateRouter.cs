@@ -123,13 +123,15 @@ namespace aalto_volley_bot.src
             };
         }
 
-        private Func<CallbackQuery, ITelegramBotClient, CancellationToken, Task> RouteCallBackQuery(string query)
+        private Func<CallbackQuery, ITelegramBotClient, CancellationToken, Task> RouteCallBackQuery(string queryData)
         {
-            return query switch
+            return queryData.Split('?').First() switch
             {
                 "Hbv:ActiveEvents" => _hbvController.SendActiveEventsAsync,
-                "Hbv:Keskarit" => _hbvController.SendWeeklyGamesAsync,
-                "Hbv:Tirsat" => _hbvController.SendWeeklyGamesAsync,
+                "Hbv:Keskarit" => _hbvController.SendWeeklyGamesMenuAsync,
+                "Hbv:Keskarit-Specific" => _hbvController.SendSpecificWeeklyGameMenuAsync,
+                "Hbv:Tirsat" => _hbvController.SendWeeklyGamesMenuAsync,
+                "Hbv:Tirsat-Specific" => _hbvController.SendSpecificWeeklyGameMenuAsync,
                 "Nimenhuuto:Manager" => _nimenhuutoController.SendManagerMenuAsync,
                 "Nimenhuuto:List specific events" => _nimenhuutoController.SendUpcomingEventsMenuAsync,
                 _ => ControllerUtils.SendDefaultCallBackQueryAsync,

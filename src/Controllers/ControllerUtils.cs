@@ -62,6 +62,20 @@ namespace aalto_volley_bot.src.Controllers
             return;
         }
 
+        public static Dictionary<string, string> ParseQueryParams(string queryData)
+        {
+            var result = new Dictionary<string, string>();
+            var queryParams = queryData.Split('?').Last().Split('&');
+
+            foreach (var query in queryParams)
+            {
+                var partition = query.Split('=');
+                result.Add(partition[0], partition[1]);
+            }
+
+            return result;
+        }
+
         private static string ReadFileContent(string path)
         {
             try
