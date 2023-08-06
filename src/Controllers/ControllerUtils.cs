@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.FileProviders;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -28,7 +27,7 @@ namespace aalto_volley_bot.src.Controllers
             return;
         }
 
-        public static async Task RespondToPrivateChatAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken, Func<long, Task> respondToChat)
+        public static async Task RespondToPrivateChatAsync(Func<long, Task> respondToChat, Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
             if (message.From == null)
             {
@@ -62,6 +61,39 @@ namespace aalto_volley_bot.src.Controllers
             return;
         }
 
+        public static async Task<(bool isValid, string queryData, Dictionary<string, string> queryParams)> ValidateAndParseCallbackQueryAsync(
+            CallbackQuery query,
+            ITelegramBotClient botClient,
+            CancellationToken cancellationToken)
+        {
+            if (query.Data == null)
+            {
+                await TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: query.Id,
+                    text: $"Unable to perform operation, because called CallbackQuery contained no data",
+                    cancellationToken: cancellationToken));
+                return (false, string.Empty, new Dictionary<string, string>());
+            }
+
+            var queryData = query.Data;
+            var queryParams = ParseQueryParams(queryData);
+
+            return (true, queryData, queryParams);
+        }
+
+        public static async Task<bool> TryActionAsync(Task action)
+        {
+            try
+            {
+                await action;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static Dictionary<string, string> ParseQueryParams(string queryData)
         {
             var result = new Dictionary<string, string>();
@@ -70,7 +102,8 @@ namespace aalto_volley_bot.src.Controllers
             foreach (var query in queryParams)
             {
                 var partition = query.Split('=');
-                result.Add(partition[0], partition[1]);
+                if (partition.Length == 2)
+                    result.Add(partition[0], partition[1]);
             }
 
             return result;

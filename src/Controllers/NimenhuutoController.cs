@@ -13,21 +13,22 @@ namespace aalto_volley_bot.src.Controllers
 
         public async Task SendMainMenuAsync(Message message, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            await ControllerUtils.RespondToPrivateChatAsync(message, botClient, cancellationToken,
+            await ControllerUtils.RespondToPrivateChatAsync(
                 respondToChat: (chatId) => botClient.SendTextMessageAsync(
                     chatId: chatId,
                     text: "Access Nimenhuuto directly in Telegram",
                     replyMarkup: _nimenhuutoWebApps.GetMainMenu(),
-                    cancellationToken: cancellationToken));
+                    cancellationToken: cancellationToken),
+                message, botClient, cancellationToken);
             return;
         }
 
         public async Task SendManagerMenuAsync(CallbackQuery query, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            await botClient.AnswerCallbackQueryAsync(
+            await ControllerUtils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: query.Id,
                 text: "Getting manager data...",
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
 
             await botClient.SendTextMessageAsync(
                 chatId: query.Message != null ? query.Message.Chat.Id : query.From.Id,
@@ -40,10 +41,10 @@ namespace aalto_volley_bot.src.Controllers
 
         public async Task SendUpcomingEventsMenuAsync(CallbackQuery query, ITelegramBotClient botClient, CancellationToken cancellationToken)
         {
-            await botClient.AnswerCallbackQueryAsync(
+            await ControllerUtils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: query.Id,
                 text: "Getting upcoming events...",
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
 
             var events = _nimenhuutoService.ScrapeUpcomingEvents();
 
