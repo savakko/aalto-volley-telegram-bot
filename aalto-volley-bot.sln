@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32819.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aalto-volley-bot", "aalto-volley-bot.csproj", "{9B4CEE1F-A228-480C-85DA-7D1BCE6B1821}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aalto-Volley-Bot.Polling", "Aalto-Volley-Bot.Polling\Aalto-Volley-Bot.Polling.csproj", "{B84F524F-D3F7-4A3F-B55F-9C60AD8E3F0A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aalto-Volley-Bot.WebHook", "Aalto-Volley-Bot.WebHook\Aalto-Volley-Bot.WebHook.csproj", "{A06B4D28-396E-4F52-93B2-18F261CC832A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9B4CEE1F-A228-480C-85DA-7D1BCE6B1821}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9B4CEE1F-A228-480C-85DA-7D1BCE6B1821}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9B4CEE1F-A228-480C-85DA-7D1BCE6B1821}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9B4CEE1F-A228-480C-85DA-7D1BCE6B1821}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B84F524F-D3F7-4A3F-B55F-9C60AD8E3F0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B84F524F-D3F7-4A3F-B55F-9C60AD8E3F0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B84F524F-D3F7-4A3F-B55F-9C60AD8E3F0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B84F524F-D3F7-4A3F-B55F-9C60AD8E3F0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A06B4D28-396E-4F52-93B2-18F261CC832A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A06B4D28-396E-4F52-93B2-18F261CC832A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A06B4D28-396E-4F52-93B2-18F261CC832A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A06B4D28-396E-4F52-93B2-18F261CC832A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
