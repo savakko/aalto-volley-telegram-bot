@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -67,10 +66,7 @@ public class UpdateHandlers
             "/start" => SendInfoMessage(_botClient, message, cancellationToken),
             "/help" => SendInfoMessage(_botClient, message, cancellationToken),
             "/nimenhuuto" => SendNimenhuutoMainMenu(_botClient, message, cancellationToken),
-            "/keyboard" => SendReplyKeyboard(_botClient, message, cancellationToken),
-            "/remove" => RemoveKeyboard(_botClient, message, cancellationToken),
-            "/request" => RequestContactAndLocation(_botClient, message, cancellationToken),
-            "/inline_mode" => StartInlineQuery(_botClient, message, cancellationToken),
+            "/hbv" => SendHbvMainMenu(_botClient, message, cancellationToken),
             _ => Usage(_botClient, message, cancellationToken)
         };
         Message sentMessage = await action;
@@ -139,59 +135,17 @@ public class UpdateHandlers
                 cancellationToken: cancellationToken);
         }
 
-        static async Task<Message> SendReplyKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        static async Task<Message> SendHbvMainMenu(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
-            ReplyKeyboardMarkup replyKeyboardMarkup = new(
-                new[]
-                {
-                        new KeyboardButton[] { "1.1", "1.2" },
-                        new KeyboardButton[] { "2.1", "2.2" },
-                })
-            {
-                ResizeKeyboard = true
-            };
-
-            return await botClient.SendTextMessageAsync(
+            await botClient.SendChatActionAsync(
                 chatId: message.Chat.Id,
-                text: "Choose",
-                replyMarkup: replyKeyboardMarkup,
+                chatAction: ChatAction.Typing,
                 cancellationToken: cancellationToken);
-        }
-
-        static async Task<Message> RemoveKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-        {
-            return await botClient.SendTextMessageAsync(
-                chatId: message.Chat.Id,
-                text: "Removing keyboard",
-                replyMarkup: new ReplyKeyboardRemove(),
-                cancellationToken: cancellationToken);
-        }
-
-        static async Task<Message> RequestContactAndLocation(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-        {
-            ReplyKeyboardMarkup RequestReplyKeyboard = new(
-                new[]
-                {
-                    KeyboardButton.WithRequestLocation("Location"),
-                    KeyboardButton.WithRequestContact("Contact"),
-                });
 
             return await botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: "Who or Where are you?",
-                replyMarkup: RequestReplyKeyboard,
-                cancellationToken: cancellationToken);
-        }
-
-        static async Task<Message> StartInlineQuery(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-        {
-            InlineKeyboardMarkup inlineKeyboard = new(
-                InlineKeyboardButton.WithSwitchInlineQueryCurrentChat("Inline Mode"));
-
-            return await botClient.SendTextMessageAsync(
-                chatId: message.Chat.Id,
-                text: "Press the button to start Inline Query",
-                replyMarkup: inlineKeyboard,
+                text: "Get info about HBV events",
+                replyMarkup: Hbv.GetMainMenuMarkup(),
                 cancellationToken: cancellationToken);
         }
     }
@@ -204,8 +158,12 @@ public class UpdateHandlers
         
         var action = queryData.Split('?')[0] switch
         {
-            "Nimenhuuto:Main" => UpdateMarkupToNimenhuutoMainMenu(_botClient, callbackQuery, cancellationToken),
-            "Nimenhuuto:Manager" => UpdateMarkupToNimenhuutoManagerMenu(_botClient, callbackQuery, cancellationToken),
+            "Nimenhuuto:Main" => SwitchToNimenhuutoMainMenu(_botClient, callbackQuery, cancellationToken),
+            "Nimenhuuto:Manager" => SwitchToNimenhuutoManagerMenu(_botClient, callbackQuery, cancellationToken),
+            "Hbv:Main" => SwitchToHbvMainMenu(_botClient, callbackQuery, cancellationToken),
+            "Hbv:ActiveEvents" => SendHbvActiveEvents(_botClient, callbackQuery, cancellationToken),
+            "Hbv:Tirsat" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
+            "Hbv:Keskarit" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             _ => NotImplemented(_botClient, callbackQuery, cancellationToken)
         };
         await action;
@@ -221,7 +179,7 @@ public class UpdateHandlers
                 cancellationToken: cancellationToken);
         }
 
-        static async Task UpdateMarkupToNimenhuutoMainMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        static async Task SwitchToNimenhuutoMainMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
             if (callbackQuery.Message is not { } message)
                 return;
@@ -239,7 +197,7 @@ public class UpdateHandlers
                 cancellationToken: cancellationToken);
         }
 
-        static async Task UpdateMarkupToNimenhuutoManagerMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        static async Task SwitchToNimenhuutoManagerMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
             if (callbackQuery.Message is not { } message)
                 return;
@@ -254,6 +212,70 @@ public class UpdateHandlers
                 messageId: message.MessageId,
                 text: "Access the manager pages (requires manager privileges)",
                 replyMarkup: Nimenhuuto.GetManagerMenuMarkup(),
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task SwitchToHbvMainMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            await botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: "Getting Hbv menu",
+                cancellationToken: cancellationToken);
+
+            await botClient.EditMessageTextAsync(
+                chatId: message.Chat.Id,
+                messageId: message.MessageId,
+                text: "Get info about HBV events",
+                replyMarkup: Hbv.GetMainMenuMarkup(),
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task SendHbvActiveEvents(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            await botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: "Getting active events",
+                cancellationToken: cancellationToken);
+
+            var events = await Hbv.GetActiveEventsAsync();
+            var response = string.Join("\n\n", events.GroupBy(ev => ev.Value<string>("date"))
+                .Select(group => "*" + group.Key + ":*\n" + string.Join("\n", group.Select(ev => $"-{ev.Value<string>("name")}"))));
+
+            await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: response,
+                parseMode: ParseMode.Markdown,
+                replyMarkup: Hbv.GetActiveEventsMenuMarkup(),
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task SwitchToHbvWeeklyGamesMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+            if (callbackQuery.Data is not { } data)
+                return;
+
+            var serie = data.Split(':').Last();
+
+            await botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: $"Getting menu options for {serie}",
+                cancellationToken: cancellationToken);
+
+            var weeklyGames = await Hbv.GetWeeklyGamesBySerieAndYearAsync(serie: serie, year: DateTime.Now.Year.ToString());
+
+            await botClient.EditMessageTextAsync(
+                chatId: message.Chat.Id,
+                messageId: message.MessageId,
+                text: $"{serie} menu",
+                replyMarkup: Hbv.GetWeeklyGamesMenuMarkup(serie, weeklyGames),
                 cancellationToken: cancellationToken);
         }
     }

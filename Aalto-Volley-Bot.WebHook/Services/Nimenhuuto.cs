@@ -6,6 +6,7 @@ public class Nimenhuuto
     {
         return new("https://aalto-volley.nimenhuuto.com/");
     }
+
     public static InlineKeyboardMarkup GetMainMenuMarkup()
     {
         return new InlineKeyboardMarkup(
@@ -46,7 +47,7 @@ public class Nimenhuuto
                 },
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData(text: "Manager -->", callbackData: "Nimenhuuto:Manager"),
+                    InlineKeyboardButton.WithCallbackData(text: "Manager", callbackData: "Nimenhuuto:Manager"),
                 },
             });
     }
