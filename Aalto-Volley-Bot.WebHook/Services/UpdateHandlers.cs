@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
+using File = System.IO.File;
 
 namespace Telegram.Bot.Services;
 
@@ -62,10 +64,11 @@ public class UpdateHandlers
 
         var action = messageText.Split(' ')[0] switch
         {
-            "/inline_keyboard" => SendInlineKeyboard(_botClient, message, cancellationToken),
+            "/start" => SendInfoMessage(_botClient, message, cancellationToken),
+            "/help" => SendInfoMessage(_botClient, message, cancellationToken),
+            "/nimenhuuto" => SendNimenhuutoMainMenu(_botClient, message, cancellationToken),
             "/keyboard" => SendReplyKeyboard(_botClient, message, cancellationToken),
             "/remove" => RemoveKeyboard(_botClient, message, cancellationToken),
-            "/photo" => SendFile(_botClient, message, cancellationToken),
             "/request" => RequestContactAndLocation(_botClient, message, cancellationToken),
             "/inline_mode" => StartInlineQuery(_botClient, message, cancellationToken),
             _ => Usage(_botClient, message, cancellationToken)
@@ -73,39 +76,66 @@ public class UpdateHandlers
         Message sentMessage = await action;
         _logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
 
-        // Send inline keyboard
-        // You can process responses in BotOnCallbackQueryReceived handler
-        static async Task<Message> SendInlineKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+
+        static async Task<Message> Usage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
             await botClient.SendChatActionAsync(
                 chatId: message.Chat.Id,
                 chatAction: ChatAction.Typing,
                 cancellationToken: cancellationToken);
 
-            // Simulate longer running task
-            await Task.Delay(500, cancellationToken);
+            var commands = await botClient.GetMyCommandsAsync(cancellationToken: cancellationToken);
+            var response = "*Available commands:*\n" +
+                string.Join("\n", commands.Select(command => $"/{command.Command} - {command.Description}"));
 
-            InlineKeyboardMarkup inlineKeyboard = new(
+            return await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: response,
+                parseMode: ParseMode.Markdown,
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task<Message> SendInfoMessage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            await botClient.SendChatActionAsync(
+                chatId: message.Chat.Id,
+                chatAction: ChatAction.Typing,
+                cancellationToken: cancellationToken);
+
+            var filePath = "Files/helpmessage.txt";
+            var response = File.Exists(filePath)
+                ? File.ReadAllText(filePath)
+                : $"It seems the resource '{filePath}' wasn't found.\nYou may contact @Saulikaiseri for help.";
+
+            var markup = new InlineKeyboardMarkup(
                 new[]
                 {
-                    // first row
-                    new []
+                    new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("1.1", "11"),
-                        InlineKeyboardButton.WithCallbackData("1.2", "12"),
-                    },
-                    // second row
-                    new []
-                    {
-                        InlineKeyboardButton.WithCallbackData("2.1", "21"),
-                        InlineKeyboardButton.WithCallbackData("2.2", "22"),
+                        InlineKeyboardButton.WithUrl(text: "Contribute", url: "https://github.com/savakko/aalto-volley-telegram-bot"),
+                        InlineKeyboardButton.WithUrl(text: "Awaken the bot", url: "https://aalto-volley-bot-vhybjebhyq-lz.a.run.app"),
                     },
                 });
 
             return await botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: "Choose",
-                replyMarkup: inlineKeyboard,
+                text: response,
+                parseMode: ParseMode.Html,
+                replyMarkup: markup,
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task<Message> SendNimenhuutoMainMenu(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            await botClient.SendChatActionAsync(
+                chatId: message.Chat.Id,
+                chatAction: ChatAction.Typing,
+                cancellationToken: cancellationToken);
+
+            return await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "Access Nimenhuuto directly in Telegram",
+                replyMarkup: Nimenhuuto.GetMainMenuMarkup(),
                 cancellationToken: cancellationToken);
         }
 
@@ -137,24 +167,6 @@ public class UpdateHandlers
                 cancellationToken: cancellationToken);
         }
 
-        static async Task<Message> SendFile(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-        {
-            await botClient.SendChatActionAsync(
-                message.Chat.Id,
-                ChatAction.UploadPhoto,
-                cancellationToken: cancellationToken);
-
-            const string filePath = "Files/tux.png";
-            await using FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var fileName = filePath.Split(Path.DirectorySeparatorChar).Last();
-
-            return await botClient.SendPhotoAsync(
-                chatId: message.Chat.Id,
-                photo: new InputFileStream(fileStream, fileName),
-                caption: "Nice Picture",
-                cancellationToken: cancellationToken);
-        }
-
         static async Task<Message> RequestContactAndLocation(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
             ReplyKeyboardMarkup RequestReplyKeyboard = new(
@@ -171,23 +183,6 @@ public class UpdateHandlers
                 cancellationToken: cancellationToken);
         }
 
-        static async Task<Message> Usage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-        {
-            const string usage = "Usage (temp addition):\n" +
-                                 "/inline_keyboard - send inline keyboard\n" +
-                                 "/keyboard    - send custom keyboard\n" +
-                                 "/remove      - remove custom keyboard\n" +
-                                 "/photo       - send a photo\n" +
-                                 "/request     - request location or contact\n" +
-                                 "/inline_mode - send keyboard with Inline Query";
-
-            return await botClient.SendTextMessageAsync(
-                chatId: message.Chat.Id,
-                text: usage,
-                replyMarkup: new ReplyKeyboardRemove(),
-                cancellationToken: cancellationToken);
-        }
-
         static async Task<Message> StartInlineQuery(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
             InlineKeyboardMarkup inlineKeyboard = new(
@@ -201,20 +196,66 @@ public class UpdateHandlers
         }
     }
 
-    // Process Inline Keyboard callback data
     private async Task BotOnCallbackQueryReceived(CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Received inline keyboard callback from: {CallbackQueryId}", callbackQuery.Id);
+        if (callbackQuery.Data is not { } queryData)
+            return;
+        
+        var action = queryData.Split('?')[0] switch
+        {
+            "Nimenhuuto:Main" => UpdateMarkupToNimenhuutoMainMenu(_botClient, callbackQuery, cancellationToken),
+            "Nimenhuuto:Manager" => UpdateMarkupToNimenhuutoManagerMenu(_botClient, callbackQuery, cancellationToken),
+            _ => NotImplemented(_botClient, callbackQuery, cancellationToken)
+        };
+        await action;
+        //_logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
 
-        await _botClient.AnswerCallbackQueryAsync(
-            callbackQueryId: callbackQuery.Id,
-            text: $"Received {callbackQuery.Data}",
-            cancellationToken: cancellationToken);
 
-        await _botClient.SendTextMessageAsync(
-            chatId: callbackQuery.Message!.Chat.Id,
-            text: $"Received {callbackQuery.Data}",
-            cancellationToken: cancellationToken);
+        static async Task NotImplemented(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            await botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: $"Response to query '{callbackQuery.Data}' has not been implemented",
+                showAlert: true,
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task UpdateMarkupToNimenhuutoMainMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            await botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: "Getting nimenhuuto menu",
+                cancellationToken: cancellationToken);
+
+            await botClient.EditMessageTextAsync(
+                chatId: message.Chat.Id,
+                messageId: message.MessageId,
+                text: "Access Nimenhuuto directly in Telegram",
+                replyMarkup: Nimenhuuto.GetMainMenuMarkup(),
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task UpdateMarkupToNimenhuutoManagerMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            await botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: "Getting nimenhuuto manager options",
+                cancellationToken: cancellationToken);
+
+            await botClient.EditMessageTextAsync(
+                chatId: message.Chat.Id,
+                messageId: message.MessageId,
+                text: "Access the manager pages (requires manager privileges)",
+                replyMarkup: Nimenhuuto.GetManagerMenuMarkup(),
+                cancellationToken: cancellationToken);
+        }
     }
 
     #region Inline Mode
