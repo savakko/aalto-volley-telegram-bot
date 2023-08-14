@@ -164,6 +164,7 @@ public class UpdateHandlers
             "Hbv:ActiveEvents" => SendHbvActiveEvents(_botClient, callbackQuery, cancellationToken),
             "Hbv:Tirsat" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:Keskarit" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
+            "Hbv:Tirsat-Specific" => SwitchToSpecificHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             _ => NotImplemented(_botClient, callbackQuery, cancellationToken)
         };
         await action;
@@ -172,11 +173,11 @@ public class UpdateHandlers
 
         static async Task NotImplemented(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
-            await botClient.AnswerCallbackQueryAsync(
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
                 text: $"Response to query '{callbackQuery.Data}' has not been implemented",
                 showAlert: true,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
         }
 
         static async Task SwitchToNimenhuutoMainMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
@@ -184,10 +185,10 @@ public class UpdateHandlers
             if (callbackQuery.Message is not { } message)
                 return;
 
-            await botClient.AnswerCallbackQueryAsync(
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
                 text: "Getting nimenhuuto menu",
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
 
             await botClient.EditMessageTextAsync(
                 chatId: message.Chat.Id,
@@ -202,10 +203,10 @@ public class UpdateHandlers
             if (callbackQuery.Message is not { } message)
                 return;
 
-            await botClient.AnswerCallbackQueryAsync(
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
                 text: "Getting nimenhuuto manager options",
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
 
             await botClient.EditMessageTextAsync(
                 chatId: message.Chat.Id,
@@ -220,10 +221,10 @@ public class UpdateHandlers
             if (callbackQuery.Message is not { } message)
                 return;
 
-            await botClient.AnswerCallbackQueryAsync(
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
                 text: "Getting Hbv menu",
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
 
             await botClient.EditMessageTextAsync(
                 chatId: message.Chat.Id,
@@ -238,10 +239,10 @@ public class UpdateHandlers
             if (callbackQuery.Message is not { } message)
                 return;
 
-            await botClient.AnswerCallbackQueryAsync(
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
                 text: "Getting active events",
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken));
 
             var events = await Hbv.GetActiveEventsAsync();
             var response = string.Join("\n\n", events.GroupBy(ev => ev.Value<string>("date"))
@@ -264,10 +265,34 @@ public class UpdateHandlers
 
             var serie = data.Split(':').Last();
 
-            await botClient.AnswerCallbackQueryAsync(
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
                 text: $"Getting menu options for {serie}",
+                cancellationToken: cancellationToken));
+
+            var weeklyGames = await Hbv.GetWeeklyGamesBySerieAndYearAsync(serie: serie, year: DateTime.Now.Year.ToString());
+
+            await botClient.EditMessageTextAsync(
+                chatId: message.Chat.Id,
+                messageId: message.MessageId,
+                text: $"{serie} menu",
+                replyMarkup: Hbv.GetWeeklyGamesMenuMarkup(serie, weeklyGames),
                 cancellationToken: cancellationToken);
+        }
+
+        static async Task SwitchToSpecificHbvWeeklyGamesMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+            if (callbackQuery.Data is not { } data)
+                return;
+
+            var serie = data.Split(':').Last();
+
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: $"Getting menu options for {serie}",
+                cancellationToken: cancellationToken));
 
             var weeklyGames = await Hbv.GetWeeklyGamesBySerieAndYearAsync(serie: serie, year: DateTime.Now.Year.ToString());
 
