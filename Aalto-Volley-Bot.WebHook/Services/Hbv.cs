@@ -140,6 +140,42 @@ public class Hbv
         }
     }
 
+    public static InlineKeyboardMarkup GetSpecificWeeklyGameMenuMarkup(string serie, JObject weeklyGame, JArray groups)
+    {
+        var link = weeklyGame.Value<string>("event_link");
+        var groupIds = string.Join(',', groups.Select(group => group.Value<string>("id")));
+
+        return new InlineKeyboardMarkup(
+            new[]
+            {
+                !string.IsNullOrEmpty(link)
+                ? new[]
+                {
+                    InlineKeyboardButton.WithUrl(
+                        text: "Sign up page",
+                        url: link),
+                }
+                : new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(
+                        text: "Sign up page not found",
+                        callbackData: "No event link found"),
+                },
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(
+                        text: "Calculate pools",
+                        callbackData: $"Hbv:{serie}-Pools?groups={groupIds}"),
+                },
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(
+                        text: "<-- Back",
+                        callbackData: $"Hbv:{serie}"),
+                },
+            });
+    }
+
     private static async Task<JToken> GetJsonContent(string path)
     {
         var client = new HttpClient();

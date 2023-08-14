@@ -165,6 +165,7 @@ public class UpdateHandlers
             "Hbv:Tirsat" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:Keskarit" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:Tirsat-Specific" => SwitchToSpecificHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
+            "Hbv:Keskarit-Specific" => SwitchToSpecificHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             _ => NotImplemented(_botClient, callbackQuery, cancellationToken)
         };
         await action;
@@ -284,23 +285,47 @@ public class UpdateHandlers
         {
             if (callbackQuery.Message is not { } message)
                 return;
-            if (callbackQuery.Data is not { } data)
-                return;
 
-            var serie = data.Split(':').Last();
+            var (path, queryParams) = Utils.ParseCallbackQuery(callbackQuery.Data);
+            var serie = path.Split(new[] { ':', '-' })[1];
+            var weeklyGameId = queryParams.GetValueOrDefault("id", "");
+
+            if (string.IsNullOrEmpty(weeklyGameId))
+            {
+                await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    text: $"No upcoming {serie}",
+                    showAlert: true,
+                    cancellationToken: cancellationToken));
+                return;
+            }
 
             await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
                 callbackQueryId: callbackQuery.Id,
-                text: $"Getting menu options for {serie}",
+                text: $"Getting menu options for upcoming {serie}",
                 cancellationToken: cancellationToken));
 
-            var weeklyGames = await Hbv.GetWeeklyGamesBySerieAndYearAsync(serie: serie, year: DateTime.Now.Year.ToString());
+            var weeklyGame = await Hbv.GetWeeklyGameByIdAsync(weeklyGameId);
+            var eventId = weeklyGame.Value<string>("event_id");
+            var link = weeklyGame.Value<string>("event_link");
+
+            if (string.IsNullOrEmpty(eventId) || string.IsNullOrEmpty(link))
+            {
+                await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    text: $"Something went wrong getting event for query {callbackQuery.Data}",
+                    showAlert: true,
+                    cancellationToken: cancellationToken));
+                return;
+            }
+
+            var groups = await Hbv.GetGroupsByEventIdAsync(eventId);
 
             await botClient.EditMessageTextAsync(
                 chatId: message.Chat.Id,
                 messageId: message.MessageId,
-                text: $"{serie} menu",
-                replyMarkup: Hbv.GetWeeklyGamesMenuMarkup(serie, weeklyGames),
+                text: $"Upcoming {serie}",
+                replyMarkup: Hbv.GetSpecificWeeklyGameMenuMarkup(serie, weeklyGame, groups),
                 cancellationToken: cancellationToken);
         }
     }
