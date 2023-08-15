@@ -1,9 +1,8 @@
-using Telegram.Bot.Exceptions;
+﻿using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
-using File = System.IO.File;
 
 namespace Telegram.Bot.Services;
 
@@ -98,10 +97,16 @@ public class UpdateHandlers
                 chatAction: ChatAction.Typing,
                 cancellationToken: cancellationToken);
 
-            var filePath = "Files/helpmessage.txt";
-            var response = File.Exists(filePath)
-                ? File.ReadAllText(filePath)
-                : $"It seems the resource '{filePath}' wasn't found.\nYou may contact @Saulikaiseri for help.";
+            var commands = await botClient.GetMyCommandsAsync(cancellationToken: cancellationToken);
+            var response = "Hello! 👋\n" +
+                "I'm Aalto-Volley-Bot, and I aim to provide you with helpful info and tools about all things Aalto-Volley.\n\n" +
+                "*Available commands:*\n" +
+                string.Join("\n", commands.Select(command => $"/{command.Command} - {command.Description}")) +
+                "\n\nFor any questions, comments, or bug reports, you may contact @Saulikaiseri. " +
+                "If you want to become a contributor, you can find a link to the source code below.\n\n" +
+                "*Notes:*\n" +
+                "_-The current deployment in Google Cloud is left idle upon POST requests, meaning the bot " +
+                "won't awaken automatically on new messages. You can awaken the bot manually by clicking the link below._";
 
             var markup = new InlineKeyboardMarkup(
                 new[]
@@ -116,7 +121,7 @@ public class UpdateHandlers
             return await botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
                 text: response,
-                parseMode: ParseMode.Html,
+                parseMode: ParseMode.Markdown,
                 replyMarkup: markup,
                 cancellationToken: cancellationToken);
         }
