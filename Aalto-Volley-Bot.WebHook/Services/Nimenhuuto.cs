@@ -49,6 +49,11 @@ public class Nimenhuuto
                 {
                     InlineKeyboardButton.WithCallbackData(text: "Manager", callbackData: "Nimenhuuto:Manager"),
                 },
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(text: "Pin keyboard", callbackData: "Nimenhuuto:Pin"),
+                    InlineKeyboardButton.WithCallbackData(text: "Unpin keyboard", callbackData: "General:Unpin"),
+                },
             });
     }
 
@@ -74,5 +79,19 @@ public class Nimenhuuto
                     InlineKeyboardButton.WithCallbackData(text: "<-- Back", callbackData: "Nimenhuuto:Main"),
                 },
             });
+    }
+
+    public static ReplyKeyboardMarkup GetReplyKeyboardMarkup()
+    {
+        return new ReplyKeyboardMarkup(
+            new[]
+            {
+                KeyboardButton.WithWebApp(
+                    text: "Nimenhuuto: Upcoming events",
+                    webAppInfo: new() { Url = new Uri(GetBasePath(), "events").ToString() }),
+            })
+        {
+            ResizeKeyboard = true,
+        };
     }
 }

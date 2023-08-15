@@ -66,6 +66,7 @@ public class UpdateHandlers
             "/help" => SendInfoMessage(_botClient, message, cancellationToken),
             "/nimenhuuto" => SendNimenhuutoMainMenu(_botClient, message, cancellationToken),
             "/hbv" => SendHbvMainMenu(_botClient, message, cancellationToken),
+            "/unpin" => RemoveKeyboard(_botClient, message, cancellationToken),
             _ => Usage(_botClient, message, cancellationToken)
         };
         Message sentMessage = await action;
@@ -126,6 +127,20 @@ public class UpdateHandlers
                 cancellationToken: cancellationToken);
         }
 
+        static async Task<Message> RemoveKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            await botClient.SendChatActionAsync(
+                chatId: message.Chat.Id,
+                chatAction: ChatAction.Typing,
+                cancellationToken: cancellationToken);
+
+            return await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "Unpinned your keyboard!",
+                replyMarkup: new ReplyKeyboardRemove(),
+                cancellationToken: cancellationToken);
+        }
+
         static async Task<Message> SendNimenhuutoMainMenu(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
             await botClient.SendChatActionAsync(
@@ -163,8 +178,10 @@ public class UpdateHandlers
         
         var action = queryData.Split('?')[0] switch
         {
+            "General:Unpin" => UnpinReplyMarkup(_botClient, callbackQuery, cancellationToken),
             "Nimenhuuto:Main" => SwitchToNimenhuutoMainMenu(_botClient, callbackQuery, cancellationToken),
             "Nimenhuuto:Manager" => SwitchToNimenhuutoManagerMenu(_botClient, callbackQuery, cancellationToken),
+            "Nimenhuuto:Pin" => PinNimenhuutoMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:Main" => SwitchToHbvMainMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:ActiveEvents" => SendHbvActiveEvents(_botClient, callbackQuery, cancellationToken),
             "Hbv:Tirsat" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
@@ -184,6 +201,23 @@ public class UpdateHandlers
                 text: $"Response to query '{callbackQuery.Data}' has not been implemented",
                 showAlert: true,
                 cancellationToken: cancellationToken));
+        }
+
+        static async Task UnpinReplyMarkup(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: $"Unpinning your current keyboard",
+                cancellationToken: cancellationToken));
+
+            await botClient.SendTextMessageAsync(
+                message.Chat.Id,
+                text: "Unpinned your keyboard!",
+                replyMarkup: new ReplyKeyboardRemove(),
+                cancellationToken: cancellationToken);
         }
 
         static async Task SwitchToNimenhuutoMainMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
@@ -219,6 +253,23 @@ public class UpdateHandlers
                 messageId: message.MessageId,
                 text: "Access the manager pages (requires manager privileges)",
                 replyMarkup: Nimenhuuto.GetManagerMenuMarkup(),
+                cancellationToken: cancellationToken);
+        }
+
+        static async Task PinNimenhuutoMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: "Pinning Nimenhuuto to your keyboard",
+                cancellationToken: cancellationToken));
+
+            await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "Pinned upcoming events to your keyboard.\nType /unpin to remove it.",
+                replyMarkup: Nimenhuuto.GetReplyKeyboardMarkup(),
                 cancellationToken: cancellationToken);
         }
 
