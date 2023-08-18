@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.Types;
+﻿using Newtonsoft.Json.Linq;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace aalto_volley_bot.src.WebApps
@@ -78,6 +79,10 @@ namespace aalto_volley_bot.src.WebApps
                 },
                 new[]
                 {
+                    BuildMenuButton("List specific events"),
+                },
+                new[]
+                {
                     BuildMenuButton("Manager"),
                 },
             });
@@ -95,6 +100,10 @@ namespace aalto_volley_bot.src.WebApps
                 {
                     BuildWebAppButton("Logs"),
                 },
+                new[]
+                {
+                    BuildBackButton("Main"),
+                },
             });
         }
 
@@ -105,6 +114,18 @@ namespace aalto_volley_bot.src.WebApps
                 new[] { InlineKeyboardButton.WithWebApp(text: pair.Key, webAppInfo: pair.Value) }));
         }
 
+        public IReplyMarkup BuildEventsColumnMenu(JArray events)
+        {
+            var menu = events.Select(ev => new[]
+            {
+                InlineKeyboardButton.WithWebApp(
+                    text: ev.Value<string>("Type") + ": " + ev.Value<string>("Time"),
+                    webAppInfo: new WebAppInfo { Url = ev.Value<string>("Link")})
+            });
+
+            return new InlineKeyboardMarkup(menu.Append(new[] { BuildBackButton("Main") }));
+        }
+
         private InlineKeyboardButton BuildWebAppButton(string key)
         {
             return InlineKeyboardButton.WithWebApp(text: key, webAppInfo: WebApps[key]);
@@ -113,6 +134,11 @@ namespace aalto_volley_bot.src.WebApps
         private static InlineKeyboardButton BuildMenuButton(string command)
         {
             return InlineKeyboardButton.WithCallbackData(text: command, callbackData: "Nimenhuuto:" + command);
+        }
+
+        private static InlineKeyboardButton BuildBackButton(string command)
+        {
+            return InlineKeyboardButton.WithCallbackData(text: "<-- Back", callbackData: "Nimenhuuto:" + command);
         }
     }
 }

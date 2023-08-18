@@ -114,24 +114,28 @@ namespace aalto_volley_bot.src
             {
                 "/hbv" => _hbvController.SendMainMenuAsync,
                 "/nimenhuuto" => _nimenhuutoController.SendMainMenuAsync,
-                "/start" => Utils.SendHelpTextAsync,
-                "/help" => Utils.SendHelpTextAsync,
-                "/menu" => Utils.SendHelpTextAsync,
-                "/hello" => Utils.SendHelpTextAsync,
-                "/hi" => Utils.SendHelpTextAsync,
-                _ => Utils.SendDefaultMessageAsync,
+                "/start" => ControllerUtils.SendHelpTextAsync,
+                "/help" => ControllerUtils.SendHelpTextAsync,
+                "/menu" => ControllerUtils.SendHelpTextAsync,
+                "/hello" => ControllerUtils.SendHelpTextAsync,
+                "/hi" => ControllerUtils.SendHelpTextAsync,
+                _ => ControllerUtils.SendDefaultMessageAsync,
             };
         }
 
-        private Func<CallbackQuery, ITelegramBotClient, CancellationToken, Task> RouteCallBackQuery(string query)
+        private Func<CallbackQuery, ITelegramBotClient, CancellationToken, Task> RouteCallBackQuery(string queryData)
         {
-            return query switch
+            return queryData.Split('?').First() switch
             {
                 "Hbv:ActiveEvents" => _hbvController.SendActiveEventsAsync,
-                "Hbv:LatestMensWeekly" => _hbvController.SendLatestMensWeeklyAsync,
-                "Hbv:LatestWomensWeekly" => _hbvController.SendLatestWomensWeeklyAsync,
+                "Hbv:Keskarit" => _hbvController.SendWeeklyGamesMenuAsync,
+                "Hbv:Keskarit-Specific" => _hbvController.SendSpecificWeeklyGameMenuAsync,
+                "Hbv:Tirsat" => _hbvController.SendWeeklyGamesMenuAsync,
+                "Hbv:Tirsat-Specific" => _hbvController.SendSpecificWeeklyGameMenuAsync,
+                "Nimenhuuto:Main" => _nimenhuutoController.SendMainMenuAsync,
                 "Nimenhuuto:Manager" => _nimenhuutoController.SendManagerMenuAsync,
-                _ => Utils.SendDefaultCallBackQueryAsync,
+                "Nimenhuuto:List specific events" => _nimenhuutoController.SendUpcomingEventsMenuAsync,
+                _ => ControllerUtils.SendDefaultCallBackQueryAsync,
             };
         }
     }
