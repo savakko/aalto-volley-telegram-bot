@@ -48,6 +48,10 @@ var app = builder.Build();
 // It is expected that BotController has single method accepting Update
 app.MapBotWebhookRoute<BotController>(route: botConfiguration.Route);
 app.MapControllers();
+
+// TODO: Remove root path response when the bot deployment is stable
+app.MapGet("/", () => "The bot was awakened!");
+
 app.Run();
 
 #pragma warning disable CA1050 // Declare types in namespaces

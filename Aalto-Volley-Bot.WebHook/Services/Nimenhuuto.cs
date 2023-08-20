@@ -65,13 +65,19 @@ public class Nimenhuuto
                 new[]
                 {
                     InlineKeyboardButton.WithWebApp(
-                        text: "Team settings",
+                        text: "Basic info",
                         webAppInfo: new() { Url = new Uri(GetBasePath(), "manager").ToString() }),
                 },
                 new[]
                 {
                     InlineKeyboardButton.WithWebApp(
-                        text: "Logs",
+                        text: "Team settings",
+                        webAppInfo: new() { Url = new Uri(GetBasePath(), "manager/settings").ToString() }),
+                },
+                new[]
+                {
+                    InlineKeyboardButton.WithWebApp(
+                        text: "Audit logs",
                         webAppInfo: new() { Url = new Uri(GetBasePath(), "audit_logs").ToString() }),
                 },
                 new[]
@@ -86,9 +92,18 @@ public class Nimenhuuto
         return new ReplyKeyboardMarkup(
             new[]
             {
-                KeyboardButton.WithWebApp(
-                    text: "Nimenhuuto: Upcoming events",
-                    webAppInfo: new() { Url = new Uri(GetBasePath(), "events").ToString() }),
+                new[]
+                {
+                    KeyboardButton.WithWebApp(
+                        text: "Nimenhuuto: Upcoming events",
+                        webAppInfo: new() { Url = new Uri(GetBasePath(), "events").ToString() }),
+                },
+                new[]
+                {
+                    KeyboardButton.WithWebApp(
+                        text: "Awaken the bot",
+                        webAppInfo: new() { Url = "https://aalto-volley-bot-vhybjebhyq-lz.a.run.app" }),
+                },
             })
         {
             ResizeKeyboard = true,
