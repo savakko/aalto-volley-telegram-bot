@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.Exceptions;
+﻿using Newtonsoft.Json.Linq;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
@@ -188,6 +189,7 @@ public class UpdateHandlers
             "Hbv:Keskarit" => SwitchToHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:Tirsat-Specific" => SwitchToSpecificHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
             "Hbv:Keskarit-Specific" => SwitchToSpecificHbvWeeklyGamesMenu(_botClient, callbackQuery, cancellationToken),
+            "Hbv:Keskarit-Pools" => SendUpcomingWeeklyGameGroups(_botClient, callbackQuery, cancellationToken),
             _ => NotImplemented(_botClient, callbackQuery, cancellationToken)
         };
         await action;
@@ -383,6 +385,111 @@ public class UpdateHandlers
                 text: $"Upcoming {serie}",
                 replyMarkup: Hbv.GetSpecificWeeklyGameMenuMarkup(serie, weeklyGame, groups),
                 cancellationToken: cancellationToken);
+        }
+
+        static async Task SendUpcomingWeeklyGameGroups(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            if (callbackQuery.Message is not { } message)
+                return;
+
+            var (path, queryParams) = Utils.ParseCallbackQuery(callbackQuery.Data);
+            var serie = path.Split(new[] { ':', '-' })[1];
+            var groupId = queryParams.GetValueOrDefault("groups", "");
+
+            if (string.IsNullOrEmpty(groupId))
+            {
+                await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    text: $"Malformatted query {callbackQuery.Data}",
+                    showAlert: true,
+                    cancellationToken: cancellationToken));
+                return;
+            }
+
+            await botClient.SendChatActionAsync(
+                message.Chat.Id,
+                chatAction: ChatAction.Typing,
+                cancellationToken: cancellationToken);
+            await Utils.TryActionAsync(botClient.AnswerCallbackQueryAsync(
+                callbackQueryId: callbackQuery.Id,
+                text: $"Calculating groups upcoming {serie}",
+                cancellationToken: cancellationToken));
+
+            var participants = await Hbv.GetParticipantsByGroupIdAsync(groupId);
+            var rankings = await Hbv.GetWeeklyGameRankingsBySerieAndYearAsync(serie: serie.ToLower(), year: DateTime.Now.Year.ToString());
+            var joined = participants.Join(
+                rankings,
+                participant => participant.Value<string>("member1_id"),
+                ranking => ranking.Value<string>("id"),
+                (participant, ranking) => new JObject()
+                {
+                    { "Id", participant["member1_id"]},
+                    { "Name", participant["name1"] },
+                    {
+                        "Ranking",
+                        ranking.Value<string>("allpoints")
+                            .Split(',')
+                            .TakeLast(2)
+                            .Select(value => double.Parse(value.Replace('.', ',')))
+                            .Average()
+                    },
+                });
+            var ordered = joined.OrderByDescending(player => player.Value<double>("Ranking")).ToArray();
+
+            var length = ordered.Length;
+            var i = 0;
+            while (i < length)
+            {
+                var player = ordered[i];
+                var position = i + 1;
+                var groupNumber = i / 4 + 1;
+                var groupPosition = i % 4 + 1;
+                //var basePoints  = 14.75 - 0.5 * group;  // 14.75 == 15.5 - 0.5 * (1 - sijoituksen jakauma)
+                var basePoints = 15.5 - 0.5 * (groupPosition - 1) - 0.5 * groupNumber;
+                var bonusPoints = 0.25 * (50 - Math.Min(groupNumber - 1, 7) * 2);  // 0.25 == omat pisteet / kaikki pisteet odotusarvo
+                var totalPoints = basePoints + bonusPoints;
+                var difference = totalPoints - player.Value<double>("Ranking");
+
+                player.Add("Position", position);
+                player.Add("Group", groupNumber);
+                player.Add("GroupPosition", groupPosition);
+                player.Add("BasePoints", basePoints);
+                player.Add("BonusPoints", bonusPoints);
+                player.Add("TotalPoints", totalPoints);
+                player.Add("Difference", difference);
+                i++;
+            }
+
+            var groups = ordered.GroupBy(participant => participant.Value<int>("Group"));
+            var groupMappings = groups.Select(group =>
+                $"*Group {group.Key}:*\n" +
+                string.Join("\n", group.Select(participant =>
+                    $"{participant.Value<int>("Position")}. " +
+                    $"{participant.Value<string>("Name")}: " +
+                    $"{participant.Value<double>("Ranking"):0.##} vs. " +
+                    $"{participant.Value<double>("TotalPoints"):0.##} = " +
+                    $"{participant.Value<double>("Difference"):+0.##;-0.##}")));
+
+            var response = "";
+            length = groupMappings.Count();
+            i = 0;
+            while (i < length)
+            {
+                response += groupMappings.ElementAt(i) + "\n\n";
+
+                // Send message for every 10 groups
+                if ((i + 1) % 10 == 0 || i == length - 1)
+                {
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: response,
+                        parseMode: ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+                    response = "";
+                }
+
+                i++;
+            }
         }
     }
 
