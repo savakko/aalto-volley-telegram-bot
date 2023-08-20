@@ -61,6 +61,10 @@ public class UpdateHandlers
         if (message.Text is not { } messageText)
             return;
 
+        // TODO: Add handling to other chat types
+        if (message.Chat.Type != ChatType.Private)
+            return;
+
         var action = messageText.Split(' ')[0] switch
         {
             "/start" => SendInfoMessage(_botClient, message, cancellationToken),
